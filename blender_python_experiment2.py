@@ -5,7 +5,6 @@ import sys
 
 Blender.Window.EditMode(0)
 
-bola_material = None
 bola_mesh = None
 iteration = []
 bola = []
@@ -19,7 +18,15 @@ def new_ball(raio, name="Bola"):
     obj.setSize(raio,raio,raio)
 
     # Adding IPO curve for the color
-    obj.setIpo(new_ipo_color(name))
+    #obj.setIpo(new_ipo_color(name))
+
+    obj.getData(mesh=1).materials = [new_ball_material(name)]
+    # Setting the default Material for this ball
+    #mesh.materials = [bola_material]
+    # Too bad the following lines don't work...
+    #mesh.setMaterials([bola_material])
+    #obj.setMaterials([bola_material])
+
 
     # Adding a subsurf modifier (just to make it even prettier)
     subsurf = obj.modifiers.append(Blender.Modifier.Types.SUBSURF)
@@ -34,8 +41,11 @@ def new_ball(raio, name="Bola"):
     return obj
 
 
-def new_ball_material():
-    mat = Blender.Material.New('BolaMat')
+def new_ball_material(name="Bola"):
+    mat = Blender.Material.New(name+"Mat")
+    mat.R = random.random()
+    mat.G = random.random()
+    mat.B = random.random()
     return mat
 
 
@@ -49,16 +59,10 @@ def new_ball_mesh():
     for f in mesh.faces:
         f.smooth = True
 
-    # Setting the default Material for this ball
-    mesh.materials = [bola_material]
-    # Too bad the following lines don't work...
-    #mesh.setMaterials([bola_material])
-    #obj.setMaterials([bola_material])
-
     return mesh
 
 
-def new_bezier_point(x,y, knot_len=1):
+def new_bezier_point(x, y, knot_len=1):
     # Note: the knot_len is completely ignored when handleTypes are set to AUTO,
     # i.e., Blender will calculate new positions for the handles automatically.
     b = Blender.BezTriple.New( (
@@ -75,18 +79,6 @@ def new_bezier_point(x,y, knot_len=1):
     return b
 
 
-def new_ipo_color(name=Bola):
-    ipo = Blender.Ipo.New("Material", name+"Color")
-
-    for color in ("R","G","B"):
-        ipocurve = ipo.addCurve(color)
-        ipocurve.extend = Blender.IpoCurve.ExtendTypes["CONST"]
-
-        ipocurve.append(new_bezier_point(1, random.random()))
-
-    return ipo
-
-
 def array(points):
     "Função usada dentro do execfile() ao ler o arquivo 'points.txt'."
     global iteration
@@ -94,9 +86,8 @@ def array(points):
 
 
 def main():
-    global bola_material, bola_mesh, iteration
+    global bola_mesh, iteration
 
-    bola_material = new_ball_material()
     bola_mesh = new_ball_mesh()
 
     execfile("points.txt", globals())
