@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # vi:ts=4 sw=4 et
 
+import sys
+
 import numpy
 from numpy import array
 
@@ -56,3 +58,26 @@ def criar_um_chute_inicial():
     x[0][1] = max(raio)
     x[0][1] = max(raio)
     return x
+
+
+def print_point(x, nome="", file=sys.stdout):
+    opts = numpy.get_printoptions()
+    numpy.set_printoptions(suppress=True, threshold=1000000)
+    if nome:
+        file.write("%s = %s\n" % (nome, repr(x)))
+    else:
+        file.write(repr(x) + "\n")
+    numpy.set_printoptions(**opts)
+
+
+def main():
+    arquivo = open("points.txt", "w")
+    arquivo.write("numbolas = " + str(numbolas) + "\n")
+    arquivo.write("raio = " + repr(raio) + "\n")
+    x = criar_um_chute_inicial()
+    print f(x)
+    print_point(x, file=arquivo)
+    arquivo.close()
+
+if __name__ == "__main__":
+    main()
