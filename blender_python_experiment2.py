@@ -7,28 +7,10 @@ Blender.Window.EditMode(0)
 
 bola_material = None
 iteration = []
-bola = []
+bolas = []
 
 def new_ball(raio, name="Bola"):
-    # Creating the mesh
-    mesh = Blender.Mesh.Primitives.UVsphere(16,16,2*raio)
-    if name:
-        mesh.name = name+"Mesh"
-
-    # Setting smooth rendering
-    for f in mesh.faces:
-        f.smooth = True
-
-    # Adding vertex colors
-    color_red   = random.randrange(0,256)
-    color_green = random.randrange(0,256)
-    color_blue  = random.randrange(0,256)
-    mesh.vertexColors = True
-    for f in mesh.faces:
-        for i,v in enumerate(f):
-            f.col[i].r = color_red
-            f.col[i].g = color_green
-            f.col[i].b = color_blue
+    mesh = new_ball_mesh(raio, name)
 
     # Setting the default Material for this ball
     mesh.materials = [bola_material]
@@ -60,29 +42,73 @@ def new_ball_material():
     return mat
 
 
+def new_ball_mesh(raio, name="Bola"):
+    # Creating the mesh
+    mesh = Blender.Mesh.Primitives.UVsphere(16, 16, 2*raio)
+    mesh.name = name + "Mesh"
+
+    # Setting smooth rendering
+    for f in mesh.faces:
+        f.smooth = True
+
+    # Adding vertex colors
+    color_red   = random.randrange(0,256)
+    color_green = random.randrange(0,256)
+    color_blue  = random.randrange(0,256)
+    mesh.vertexColors = True
+    for f in mesh.faces:
+        for i,v in enumerate(f):
+            f.col[i].r = color_red
+            f.col[i].g = color_green
+            f.col[i].b = color_blue
+
+    return mesh
+
+
+def new_bezier_point(x, y, knot_len=1):
+    # Note: the knot_len is completely ignored when handleTypes are set to AUTO,
+    # i.e., Blender will calculate new positions for the handles automatically.
+    b = Blender.BezTriple.New( (
+        x-knot_len, y, 0,
+        x, y, 0,
+        x+knot_len, y, 0,
+    ) )
+    # Bezier handle types:
+    # http://wiki.blender.org/index.php/Doc:Manual/Modelling/Curves#B.C3.A9ziers
+    b.handleTypes = [
+        Blender.BezTriple.HandleTypes["AUTO"],
+        Blender.BezTriple.HandleTypes["AUTO"],
+    ]
+    return b
+
+
 def array(points):
     "Função usada dentro do execfile() ao ler o arquivo 'points.txt'."
     global iteration
     iteration.append(points)
+
 
 def main():
     global bola_material, iteration
 
     bola_material = new_ball_material()
 
-    execfile("points.txt", globals())
-
     scaling = 100.0
 
+    execfile("points.txt", globals())
+
+    # Creating and adding balls to the global "bolas" list
     for i in range(numbolas):
-        bola.append( new_ball(
+        bolas.append( new_ball(
             raio[i]/scaling,
             name = "Bola%3d" % (i+1,)
         ))
 
+    # Moving the balls to a starting position
+    # Note: this code will be replaced with another one with IPOs.
     it = iteration[0]
     for i,coords in enumerate(it[1:]):
-        bola[i].setLocation(
+        bolas[i].setLocation(
             coords[0]/scaling,
             coords[1]/scaling,
             coords[2]/scaling
@@ -93,39 +119,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-def unused_code():
-    ipo = Blender.Ipo.New("Object", "GeneratedIpo")
-    ipocurve = ipo.addCurve("dLocZ")
-    ipocurve.extend = Blender.IpoCurve.ExtendTypes["CONST"]
-    ipocurve.interpolation = Blender.IpoCurve.InterpTypes["BEZIER"]
-
-    knot_len = 1
-    def newBezier(x,y):
-        # Note: the knot_len is completely ignored when handleTypes are set to AUTO,
-        # i.e., Blender will calculate new positions for the handles automatically.
-        b = Blender.BezTriple.New( (
-            x-knot_len, y, 0,
-            x, y, 0,
-            x+knot_len, y, 0,
-        ) )
-        # Bezier handle types:
-        # http://wiki.blender.org/index.php/Doc:Manual/Modelling/Curves#B.C3.A9ziers
-        b.handleTypes = [
-            Blender.BezTriple.HandleTypes["AUTO"],
-            Blender.BezTriple.HandleTypes["AUTO"],
-        ]
-        return b
-
-    b1 = newBezier(0,10)
-    b2 = newBezier(200,0)
-
-    # AttributeError: attribute 'bezierPoints' of 'IpoCurve' objects is not writable
-    # ipocurve.bezierPoints += [b1,b2]
-
-    ipocurve.append(b1)
-    ipocurve.append(b2)
-
-    obj.setIpo(ipo)
-
