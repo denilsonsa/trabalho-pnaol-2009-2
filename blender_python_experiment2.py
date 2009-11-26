@@ -6,7 +6,7 @@ import sys
 Blender.Window.EditMode(0)
 
 bola_material = None
-iteration = []
+iterations = []
 bolas = []
 
 def new_ball(raio, name="Bola"):
@@ -31,6 +31,16 @@ def new_ball(raio, name="Bola"):
 
     subsurf[Blender.Modifier.Settings.LEVELS] = 1
     subsurf[Blender.Modifier.Settings.RENDLEVELS] = 1
+
+    # Creating an empty IPO curve
+    ipo = Blender.Ipo.New("Object", name+"Ipo")
+
+    for curvename in ("LocX", "LocY", "LocZ"):
+        ipocurve = ipo.addCurve(curvename)
+        ipocurve.extend = Blender.IpoCurve.ExtendTypes["CONST"]
+        ipocurve.interpolation = Blender.IpoCurve.InterpTypes["BEZIER"]
+
+    obj.setIpo(ipo)
 
     return obj
 
@@ -84,12 +94,12 @@ def new_bezier_point(x, y, knot_len=1):
 
 def array(points):
     "Função usada dentro do execfile() ao ler o arquivo 'points.txt'."
-    global iteration
-    iteration.append(points)
+    global iterations
+    iterations.append(points)
 
 
 def main():
-    global bola_material, iteration
+    global bola_material, iterations
 
     bola_material = new_ball_material()
 
@@ -101,18 +111,28 @@ def main():
     for i in range(numbolas):
         bolas.append( new_ball(
             raio[i]/scaling,
-            name = "Bola%3d" % (i+1,)
+            name = "Bola%03d" % (i+1,)
         ))
 
-    # Moving the balls to a starting position
-    # Note: this code will be replaced with another one with IPOs.
-    it = iteration[0]
-    for i,coords in enumerate(it[1:]):
-        bolas[i].setLocation(
-            coords[0]/scaling,
-            coords[1]/scaling,
-            coords[2]/scaling
-        )
+    frames_per_iteration = 25
+
+    # Moving the balls using IPO curves
+    for i in range(numbolas):
+        obj = bolas[i]
+        curvex = obj.getIpo()[Blender.Ipo.OB_LOCX]
+        curvey = obj.getIpo()[Blender.Ipo.OB_LOCY]
+        curvez = obj.getIpo()[Blender.Ipo.OB_LOCZ]
+
+        # Adding the coordinates
+        for itnum, it in enumerate(iterations):
+            coord = it[i+1]
+            curvex.append(new_bezier_point(1 + itnum*frames_per_iteration, coord[0]/scaling))
+            curvey.append(new_bezier_point(1 + itnum*frames_per_iteration, coord[1]/scaling))
+            curvez.append(new_bezier_point(1 + itnum*frames_per_iteration, coord[2]/scaling))
+
+        #curvex.recalc()
+        #curvey.recalc()
+        #curvez.recalc()
 
     Blender.Redraw()
 

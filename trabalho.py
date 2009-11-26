@@ -77,6 +77,9 @@ def main():
     x = criar_um_chute_inicial()
     print f(x)
     print_point(x, file=arquivo)
+    print_point(x/2, file=arquivo)
+    print_point(x/2 + 2, file=arquivo)
+    print_point(x + 2, file=arquivo)
     arquivo.close()
 
 if __name__ == "__main__":
