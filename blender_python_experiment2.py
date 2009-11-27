@@ -3,11 +3,27 @@ import Blender
 import random
 import sys
 
-Blender.Window.EditMode(0)
+# Variáveis Globais
 
+# Contém o material usado nas bolas no Blender
 bola_material = None
-iterations = []
+
+# Lista com os objetos das bolas no Blender
 bolas = []
+
+# Lista, na qual cada elemento é uma iteração.
+# Cada iteração, por sua vez, é uma lista de pontos.
+# Cada ponto, por sua vez, é uma lista das coordenadas X,Y,Z do ponto.
+# O primeiro ponto (de índice 0) é o ponto C2 da caixa.
+#
+# Cada iteração corresponde a um ponto "x" (de dimensão 543) do domínio
+# do problema original.
+#
+# Resumindo:
+#   iterations[3] é a quarta iteração
+#   iterations[4][0] é o ponto "C2" da quinta iteração
+#   iterations[2][4][1] é a coordenada Y da quarta bola da terceira iteração
+iterations = []
 
 def new_ball(raio, name="Bola"):
     mesh = new_ball_mesh(raio, name)
@@ -100,6 +116,8 @@ def array(points):
 
 def main():
     global bola_material, iterations
+
+    Blender.Window.EditMode(0)
 
     bola_material = new_ball_material()
 
