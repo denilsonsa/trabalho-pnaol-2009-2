@@ -15,6 +15,9 @@ raio = array(
     [ 70.0 ] * 30
 )
 
+direcoes_busca_coordenada = []
+iteracoes = []
+
 
 def f(x):
     """Função objetiva a ser minimizada, já incluindo as restrições.
@@ -30,13 +33,6 @@ def f(x):
     * O primeiro elemento são as coordenadas X,Y,Z do vértice C2 da caixa.
     * Os <numbolas> elementos seguintes são as coordenadas X,Y,Z de cada
       uma das bolas.
-
-    Esta função retorna uma tupla com três elementos:
-    * total - é o custo, ou a imagem, correspondente ao ponto x
-    * num_colisoes - quantidade de colisões detectadas
-    * num_bordas - quantidade de bolas cruzando a borda da caixa
-    De maneira geral, apenas o "total" é importante. Os outros dois valores
-    são retornados apenas para fins informativos.
     """
 
     area = 2 * (
@@ -79,12 +75,19 @@ def f(x):
 
     total = area + colisoes + bordas
 
-    return (total, num_colisoes, num_bordas)
+    #return (total, num_colisoes, num_bordas)
+    return total
+
+
+def criar_ponto(zeros=True):
+    if zeros:
+        return numpy.zeros( shape=(numbolas+1, 3),  dtype=numpy.float64)
+    else:
+        return numpy.empty( shape=(numbolas+1, 3),  dtype=numpy.float64)
 
 
 def criar_um_chute_inicial():
-    #x = numpy.zeros( shape=(numbolas+1, 3),  dtype=numpy.float64)
-    x = numpy.empty( shape=(numbolas+1, 3),  dtype=numpy.float64)
+    x = criar_ponto(zeros=False)
     prev = 0.0
     for i, v in enumerate(x[1:]):
         v[0] = prev + raio[i]
@@ -95,6 +98,42 @@ def criar_um_chute_inicial():
     x[0][1] = 2*max(raio)
     x[0][2] = 2*max(raio)
     return x
+
+
+def busca_padrao(x_inicial, direcoes, callback):
+    iteracao = 0
+    delta = 2.0
+    epsilon = 10**(-6)
+
+    x  = x_inicial
+    fx = f(x)
+    callback(iteracao, x, fx)
+
+    while delta > epsilon:
+        for d in direcoes:
+            xnovo = x + delta*d
+            fxnovo = f(xnovo)
+            if fxnovo < fx:
+                iteracao += 1
+                x = xnovo
+                fx = fxnovo
+                callback(iteracao, x, fx)
+                break
+        else:  # Este else é em relação ao for
+            delta /= 2
+
+
+
+def criar_direcoes_busca_coordenada():
+    origem = criar_ponto(zeros=True)
+    dirs = []
+    for i in range(origem.size):
+        for d in (-1, 1):
+            x = origem.copy()
+            x.flat[i] = d
+            dirs.append( x )
+
+    return dirs
 
 
 def print_point(x, nome="", file=sys.stdout):
@@ -108,16 +147,34 @@ def print_point(x, nome="", file=sys.stdout):
 
 
 def main():
+    global direcoes_busca_coordenada, iteracoes
+
     arquivo = open("points.txt", "w")
     arquivo.write("numbolas = " + str(numbolas) + "\n")
     arquivo.write("raio = " + repr(list(raio)) + "\n")
+
+    direcoes_busca_coordenada = criar_direcoes_busca_coordenada()
+    iteracoes = []
+
     x = criar_um_chute_inicial()
-    print f(x)
-    print_point(x, file=arquivo)
-    print_point(x/2, file=arquivo)
-    print_point(x/2 + 20, file=arquivo)
-    print_point(x + 20, file=arquivo)
+
+    def registrar_iteracao(itnum, x, fx):
+        global iteracoes
+        iteracoes.append( (fx, x) )
+        print "%d - %f" % (itnum, fx)
+        if arquivo:
+            arquivo.write("# f(x) = %f\n" % (fx,))
+            print_point(x, file=arquivo)
+
+
+    busca_padrao(x, direcoes_busca_coordenada, registrar_iteracao)
+
+    #for p in iteracoes:
+    #    arquivo.write("# f(x) = %f\n" % (p[0],))
+    #    print_point(p[1], file=arquivo)
+
     arquivo.close()
+
 
 if __name__ == "__main__":
     main()
