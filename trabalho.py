@@ -8,7 +8,7 @@ import numpy
 from numpy import array
 
 numbolas = 180
-raio = (
+raio = array(
 #   [ raio ] * quant  # <quant> bolas de <raio> cm
     [ 20.0 ] * 100 +
     [ 50.0 ] * 50  +
@@ -37,12 +37,32 @@ def f(x):
         x[0][1] * x[0][2]
     )
 
-    # TODO: adicionar custo das restrições
+    # Restrição:
     #   | b_i - b_j |  >=  r_i + r_j  (para todo i,j)
+    # ou seja:
+    #   r_i + r_j - | b_i - b_j | <= 0
+    colisao = 0.0
+    for i in range(1, numbolas+1):
+        for j in range(i+1, numbolas+1):
+            delta = x[i]-x[j]
+            dist = numpy.dot(delta, delta)  # quadrado da norma do vetor
+            colisao += max(0.0, raio[i-1] + raio[j-1] - dist )
+
+    # Restrições:
     #   b_i - r_i  >= 0   (para todo i)
     #   b_i + r_i  <= C2  (para todo i)
+    # ou seja:
+    #  -b_i + r_i     <= 0
+    #   b_i + r_i -C2 <= 0
+    bordas = 0.0
+    for i in range(1, numbolas+1):
+        for j in range(3):  # x,y,z
+            bordas += max(0.0, -x[i][j] + raio[i-1])
+            bordas += max(0.0,  x[i][j] + raio[i-1] - x[0][j])
 
-    return area
+    print area, colisao, bordas
+
+    return area + colisao + bordas
 
 
 def criar_um_chute_inicial():
@@ -55,8 +75,8 @@ def criar_um_chute_inicial():
         v[1] = raio[i]
         v[2] = raio[i]
     x[0][0] = prev
-    x[0][1] = max(raio)
-    x[0][1] = max(raio)
+    x[0][1] = 2*max(raio)
+    x[0][2] = 2*max(raio)
     return x
 
 
@@ -73,7 +93,7 @@ def print_point(x, nome="", file=sys.stdout):
 def main():
     arquivo = open("points.txt", "w")
     arquivo.write("numbolas = " + str(numbolas) + "\n")
-    arquivo.write("raio = " + repr(raio) + "\n")
+    arquivo.write("raio = " + repr(list(raio)) + "\n")
     x = criar_um_chute_inicial()
     print f(x)
     print_point(x, file=arquivo)
