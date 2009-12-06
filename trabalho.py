@@ -30,7 +30,15 @@ def f(x):
     * O primeiro elemento são as coordenadas X,Y,Z do vértice C2 da caixa.
     * Os <numbolas> elementos seguintes são as coordenadas X,Y,Z de cada
       uma das bolas.
+
+    Esta função retorna uma tupla com três elementos:
+    * total - é o custo, ou a imagem, correspondente ao ponto x
+    * num_colisoes - quantidade de colisões detectadas
+    * num_bordas - quantidade de bolas cruzando a borda da caixa
+    De maneira geral, apenas o "total" é importante. Os outros dois valores
+    são retornados apenas para fins informativos.
     """
+
     area = 2 * (
         x[0][0] * x[0][1] +
         x[0][0] * x[0][2] +
@@ -41,12 +49,16 @@ def f(x):
     #   | b_i - b_j |  >=  r_i + r_j  (para todo i,j)
     # ou seja:
     #   r_i + r_j - | b_i - b_j | <= 0
-    colisao = 0.0
+    num_colisoes = 0
+    colisoes = 0.0
     for i in range(1, numbolas+1):
         for j in range(i+1, numbolas+1):
             delta = x[i]-x[j]
             dist = numpy.dot(delta, delta)  # quadrado da norma do vetor
-            colisao += max(0.0, raio[i-1] + raio[j-1] - dist )
+            penalidade = raio[i-1] + raio[j-1] - dist
+            if penalidade > 0.0:
+                colisoes += penalidade
+                num_colisoes += 1
 
     # Restrições:
     #   b_i - r_i  >= 0   (para todo i)
@@ -54,15 +66,20 @@ def f(x):
     # ou seja:
     #  -b_i + r_i     <= 0
     #   b_i + r_i -C2 <= 0
+    num_bordas = 0
     bordas = 0.0
     for i in range(1, numbolas+1):
+        penalidade = 0.0
         for j in range(3):  # x,y,z
-            bordas += max(0.0, -x[i][j] + raio[i-1])
-            bordas += max(0.0,  x[i][j] + raio[i-1] - x[0][j])
+            penalidade += max(0.0, -x[i][j] + raio[i-1])
+            penalidade += max(0.0,  x[i][j] + raio[i-1] - x[0][j])
+        if penalidade > 0.0:
+            bordas += penalidade
+            num_bordas += 1
 
-    print area, colisao, bordas
+    total = area + colisoes + bordas
 
-    return area + colisao + bordas
+    return (total, num_colisoes, num_bordas)
 
 
 def criar_um_chute_inicial():
@@ -98,8 +115,8 @@ def main():
     print f(x)
     print_point(x, file=arquivo)
     print_point(x/2, file=arquivo)
-    print_point(x/2 + 2, file=arquivo)
-    print_point(x + 2, file=arquivo)
+    print_point(x/2 + 20, file=arquivo)
+    print_point(x + 20, file=arquivo)
     arquivo.close()
 
 if __name__ == "__main__":
