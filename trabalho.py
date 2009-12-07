@@ -36,9 +36,18 @@ def f(x):
     """
 
     area = 2 * (
-        x[0][0] * x[0][1] +
-        x[0][0] * x[0][2] +
-        x[0][1] * x[0][2]
+        abs(x[0][0] * x[0][1]) +
+        abs(x[0][0] * x[0][2]) +
+        abs(x[0][1] * x[0][2])
+    )
+
+    # Restrição:
+    #   C2 tem que ser positivo (ou seja, cada componente de C2 tem
+    #   que ser maior que cada componente de C1)
+    penalidade_caixa = (
+        max(0, -x[0][0]) +
+        max(0, -x[0][1]) +
+        max(0, -x[0][2])
     )
 
     # Restrição:
@@ -73,7 +82,7 @@ def f(x):
             bordas += penalidade
             num_bordas += 1
 
-    total = area + colisoes + bordas
+    total = area + penalidade_caixa + colisoes + bordas
 
     #return (total, num_colisoes, num_bordas)
     return total
