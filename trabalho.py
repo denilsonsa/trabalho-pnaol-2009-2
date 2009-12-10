@@ -2,6 +2,49 @@
 # -*- coding: utf-8 -*-
 # vi:ts=4 sw=4 et
 
+######################################################################
+#   Trabalho de Programação Não Linear - 2009/2
+# Prof.: Luziane
+#
+# Denilson Figueiredo de Sá
+# DRE: 103108905
+#
+# Gabriel Ferreira Barros
+# DRE: 107362179
+#
+#
+# Problema sendo resolvido:
+#   Empacotamento de bolas
+#   Dadas 180 bolas de tamanhos (raios) diferentes, encontrar uma
+#   disposição delas de modo que minimize a área da caixa usada para
+#   armazenar todas as bolas.
+#
+# Método implementado:
+#   Busca coordenada (ou busca padrão usando as direções coordenadas)
+#
+# Detalhes de modelagem:
+#   Favor consultar a documentação da função objetivo f(x), mais
+#   abaixo.
+#
+# Resultados encontrados:
+#   Sem a restrição para o valor de C2, o método não convergiu e
+#   reduziu as coordenadas de C2 de maneira irrestrita, chegando a
+#   coordenadas negativas e, por erro na fórmula inicial, à área
+#   negativa.
+#
+#   A proposta é tentar novamente usando a nova fórmula apresentada
+#   abaixo, a qual inclui "abs()" no cálculo da área e também inclui a
+#   restrição penalidade_caixa
+#
+#   Uma segunda proposta é não considerar as coordenadas de C2 como
+#   variáveis do problema, mas sim calculá-las dentro de f(x) através
+#   da fórmula:
+#     C2.x = max(bi_x + r_i)
+#     C2.y = max(bi_y + r_i)
+#     C2.z = max(bi_z + r_i)
+#
+
+
 import sys
 
 import numpy
@@ -20,7 +63,7 @@ iteracoes = []
 
 
 def f(x):
-    """Função objetiva a ser minimizada, já incluindo as restrições.
+    """Função objetivo a ser minimizada, já incluindo as restrições.
 
     Esta função modela <numbolas> de raios diferentes a serem colocadas numa
     caixa. A caixa é definida pelos pontos C1 e C2, dois vértices opostos.
@@ -34,6 +77,14 @@ def f(x):
     * Os <numbolas> elementos seguintes são as coordenadas X,Y,Z de cada
       uma das bolas.
     """
+
+    # Nota: os resultados citados acima foram obtidos usando esta
+    # fórmula e sem o cálculo da penalidade_caixa:
+    # area = 2 * (
+    #     x[0][0] * x[0][1] +
+    #     x[0][0] * x[0][2] +
+    #     x[0][1] * x[0][2]
+    # )
 
     area = 2 * (
         abs(x[0][0] * x[0][1]) +
@@ -96,6 +147,8 @@ def criar_ponto(zeros=True):
 
 
 def criar_um_chute_inicial():
+    """Retorna um chute inicial "x" com todas as bolas alinhadas.
+    """
     x = criar_ponto(zeros=False)
     prev = 0.0
     for i, v in enumerate(x[1:]):
